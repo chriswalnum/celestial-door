@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Celestial Door Puzzle</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel+Decorative:wght@400;700;900&display=swap');
+    body {
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+      background: radial-gradient(circle,#2a2a4e,#1a1a2e);
+      color: #e6e6e6;
+      margin: 0; padding: 0;
+      overflow: hidden;
+    }
+    .page-container {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cathedral-door {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle,#44411a,#775c1b 20%,#a97222 50%,#775c1b 80%,#44411a);
+      filter: drop-shadow(0 0 20px rgba(0,0,0,0.5)) blur(1px);
+      opacity: .6;
+    }
+    .cathedral-door::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 25% 50%, rgba(255,140,0,0.2), transparent 10%),
+        radial-gradient(circle at 75% 50%, rgba(255,140,0,0.2), transparent 10%);
+      animation: flicker 3s infinite alternate;
+    }
+    @keyframes flicker {
+      0%,100%{opacity:.8}25%{opacity:.6}50%{opacity:.9}75%{opacity:.7}
+    }
+    .content-container {
+      position: relative; z-index: 1;
+      text-align: center;
+    }
+    .title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 3rem; color: #ffd700;
+      text-shadow: 0 0 10px rgba(255,215,0,0.5);
+      margin-bottom: 1rem;
+    }
+    .puzzle-container {
+      position: relative;
+      width: 400px; height: 400px;
+      margin: 0 auto 1rem;
+      perspective: 1200px;
+    }
+    .ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 30px rgba(255,215,0,.3);
+      transition: box-shadow .3s;
+    }
+    .outer-ring { width:360px; height:360px; border:8px solid #ffd700; transform: translateZ(-20px); }
+    .middle-ring { width:240px; height:240px; border:6px solid #ffd700; transform: translateZ(0px); }
+    .inner-ring { width:120px; height:120px; border:4px solid #ffd700; transform: translateZ(20px); }
+    .symbol {
+      position: absolute;
+      width: 40px; height: 40px;
+      display: flex; align-items:center; justify-content:center;
+      font-size:1.8rem;
+      background: rgba(30,30,60,.8);
+      border:2px solid #d4af37; border-radius:50%;
+      color:#ffd700; cursor:pointer;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .symbol.top { border-color:#fff; }
+    .symbol:hover { transform: scale(1.2); box-shadow: 0 0 15px rgba(255,215,0,.8); }
+    .correct-ring { box-shadow: 0 0 30px rgba(0,255,0,0.7) !important; }
+    .controls { margin:1rem 0; }
+    .controls button {
+      margin:0 .5rem; padding:.5rem 1rem;
+      font-family:'MedievalSharp',cursive; color:#ffd700;
+      background:#2a2a4e; border:2px solid #d4af37; border-radius:5px;
+      cursor:pointer; transition:.2s;
+    }
+    .controls button:disabled { opacity:.5; cursor:not-allowed; }
+    .attempts { margin-top:.5rem; color:#d4af37; }
+    .console {
+      width: 500px; max-width:90%;
+      height: 140px; margin:1rem auto;
+      background: rgba(30,30,60,.7);
+      border:2px solid #d4af37; border-radius:8px;
+      padding:8px; font-family: monospace; font-size:.8rem;
+      overflow-y: auto; color:#d4af37;
+    }
+    .message {
+      height:2.5rem; margin-top:.5rem;
+      font-size:1.1rem; opacity:0; transition:.5s;
+    }
+    .message.show { opacity:1; color:#0f0; text-shadow:0 0 5px rgba(0,255,0,.7); }
+    .success-door-effect {
+      position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(circle at center, rgba(255,215,0,0.3), transparent 70%),
+        repeating-radial-gradient(circle at center, rgba(255,215,0,0.1), rgba(255,215,0,0.2) 20px);
+      opacity:0; transition:.5s;
+    }
+    .success-door-effect.active { opacity:1; animation:pulsate 3s infinite; }
+    @keyframes pulsate { 0%,100%{opacity:.9}50%{opacity:.5} }
+    .success-box {
+      position:absolute; inset:0; display:flex;
+      align-items:center; justify-content:center; pointer-events:none;
+      font-family:'MedievalSharp',cursive; font-size:2.5rem;
+      color:#ffd700; text-shadow:0 0 10px rgba(255,215,0,.7);
+      background:rgba(50,40,80,.6); border:3px solid #d4af37;
+      opacity:0; transition:.5s; padding:2rem; border-radius:8px;
+    }
+    .success-box.show { opacity:1; }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="cathedral-door"></div>
+    <div id="doorEffect" class="success-door-effect"></div>
+    <div id="successBox" class="success-box">The celestial wheels align—the door unlocks!</div>
+
+    <div class="content-container">
+      <div class="title">The Celestial Door</div>
+      <div id="puzzle" class="puzzle-container">
+        <div id="outerRing" class="ring outer-ring"></div>
+        <div id="middleRing" class="ring middle-ring"></div>
+        <div id="innerRing" class="ring inner-ring"></div>
+      </div>
+
+      <div class="controls">
+        <button id="rotateOuter">Rotate Outer</button>
+        <button id="rotateMiddle">Rotate Middle</button>
+        <button id="rotateInner">Rotate Inner</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div id="attempts" class="attempts">Attempts: 0</div>
+      <div id="console" class="console">=== LOG ===\n</div>
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded',()=> {
+      const SYMS = { WAXING:'🌒', FULL:'🌕', WANING:'🌘', ECLIPSE:'🌑', SUN:'☀️' };
+      const initO=[SYMS.WAXING,SYMS.FULL,SYMS.WANING,SYMS.ECLIPSE,SYMS.SUN];
+      const initM=[SYMS.WANING,SYMS.SUN,SYMS.ECLIPSE,SYMS.FULL,SYMS.WAXING];
+      const initI=[SYMS.SUN,SYMS.WAXING,SYMS.FULL,SYMS.WANING,SYMS.ECLIPSE];
+      const target=[SYMS.WANING,SYMS.FULL,SYMS.ECLIPSE];
+      let outer, middle, inner, attempts=0, solved=false, hinted=false;
+      const start=Date.now();
+
+      const oEl=document.getElementById('outerRing'),
+            mEl=document.getElementById('middleRing'),
+            iEl=document.getElementById('innerRing'),
+            logEl=document.getElementById('console'),
+            msgEl=document.getElementById('message'),
+            attEl=document.getElementById('attempts'),
+            doorFx=document.getElementById('doorEffect'),
+            successBox=document.getElementById('successBox');
+
+      function log(txt){
+        logEl.textContent += '['+new Date().toLocaleTimeString()+'] '+txt+"\n";
+        logEl.scrollTop=logEl.scrollHeight;
+      }
+      function rot(arr){ arr.unshift(arr.pop()); }
+      function bump(arr,n){ for(let i=0;i<n;i++) rot(arr); }
+      function render(el,arr,idx){
+        el.innerHTML='';
+        arr.forEach((s,i)=>{
+          const a= (i*72-90)*Math.PI/180;
+          const r= el===oEl?160:el===mEl?100:40;
+          const x=Math.cos(a)*r, y=Math.sin(a)*r;
+          const d=document.createElement('div');
+          d.className='symbol'+(i===0?' top':'');
+          d.textContent=s;
+          d.style.transform=`translate(${x}px,${y}px)`;
+          el.appendChild(d);
+        });
+        el.classList.toggle('correct-ring', arr[0]===target[idx]);
+      }
+      function update(){
+        attempts++; attEl.textContent='Attempts: '+attempts;
+        render(oEl,outer,0); render(mEl,middle,1); render(iEl,inner,2);
+        if(!hinted && (attempts>=20||Date.now()-start>120000)){
+          hinted=true; log('🔮 Hint: “Waning leads to Fullness, which brings Eclipse.”');
+        }
+        checkSolve();
+      }
+      function init(){
+        [outer,middle,inner]=[initO.slice(),initM.slice(),initI.slice()];
+        attempts=0; solved=hinted=false;
+        logEl.textContent='=== LOG ===\n';
+        log('The door awaits the correct alignment...');
+        render(oEl,outer,0); render(mEl,middle,1); render(iEl,inner,2);
+        attEl.textContent='Attempts: 0';
+        msgEl.className='message'; msgEl.textContent='';
+        doorFx.className='success-door-effect'; successBox.className='success-box';
+        ['rotateOuter','rotateMiddle','rotateInner'].forEach(id=>document.getElementById(id).disabled=false);
+      }
+      function checkSolve(){
+        if(!solved && outer[0]===target[0]&&middle[0]===target[1]&&inner[0]===target[2]){
+          solved=true; log('🎉 Solved!');
+          msgEl.textContent='The celestial wheels align—the door unlocks!';
+          msgEl.classList.add('show');
+          doorFx.classList.add('active');
+          successBox.classList.add('show');
+          ['rotateOuter','rotateMiddle','rotateInner'].forEach(id=>document.getElementById(id).disabled=true);
+        }
+      }
+
+      document.getElementById('rotateOuter').onclick=()=>{
+        if(solved)return; log('Rotate Outer'); rot(outer); bump(middle,2); update();
+      };
+      document.getElementById('rotateMiddle').onclick=()=>{
+        if(solved)return; log('Rotate Middle'); rot(middle); bump(inner,2); update();
+      };
+      document.getElementById('rotateInner').onclick=()=>{
+        if(solved)return; log('Rotate Inner'); rot(inner); bump(outer,2); update();
+      };
+      document.getElementById('reset').onclick=()=>{ log('Resetting'); init(); };
+
+      init();
+    });
+  </script>
+</body>
+</html>
